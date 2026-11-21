@@ -103,7 +103,7 @@
       animation: cursorBlink 0.85s infinite;
     }
   </style>
-  <script src="https://js.stripe.com/v3/"></script>
+  <script src="https://cdn.whop.com/elements/amber/elements.js" data-whop-elements></script>
 </head>
 <body class="antialiased selection:bg-blue-100 selection:text-blue-900">
 
@@ -620,8 +620,8 @@
                 </div>
               </div>
 
-              <!-- Stripe Checkout Button -->
-              <button id="stripeCheckoutBtn" onclick="startStripeCheckout()" class="w-full py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm flex items-center justify-center gap-2 shadow-md shadow-blue-600/20 transition cursor-pointer">
+              <!-- Whop Checkout Button -->
+              <button id="whopCheckoutBtn" onclick="startWhopCheckout()" class="w-full py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm flex items-center justify-center gap-2 shadow-md shadow-blue-600/20 transition cursor-pointer">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
                 Pay $9.99/month — Subscribe Now
               </button>
@@ -636,11 +636,11 @@
                 </div>
                 <div class="flex items-center gap-1.5 text-[11px] text-slate-400">
                   <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-                  Powered by Stripe
+                  Powered by Whop
                 </div>
               </div>
 
-              <p class="text-[10px] text-slate-400 text-center">You'll be redirected to Stripe's secure payment page. Your payment info never touches our servers.</p>
+              <p class="text-[10px] text-slate-400 text-center">Secure checkout powered by Whop. Your payment info never touches our servers.</p>
             </div>
           </div>
         </div>
@@ -1887,7 +1887,7 @@
       renderAllWorkspaceUI();
       updateSupaStatusPill();
       maybeShowOnboarding();
-      // Handle Stripe checkout redirect (if returning from payment)
+      // Handle Whop checkout redirect (if returning from payment)
       handleCheckoutReturn();
     }
 
@@ -4078,13 +4078,12 @@ Build them a complete, pro-quality prompt. Respond in this exact format:
     }
 
     // ---------------------------------------------------------
-    // STRIPE CHECKOUT INTEGRATION
+    // WHOP CHECKOUT INTEGRATION
     // ---------------------------------------------------------
-    // ⚠️ REPLACE THESE WITH YOUR REAL STRIPE VALUES:
-    // 1. Go to https://dashboard.stripe.com → Developers → API Keys → copy Publishable key
-    // 2. Go to Products → Create "Trinity Pro" at $9.99/mo recurring → copy the Price ID
-    const STRIPE_PUBLISHABLE_KEY = 'pk_test_REPLACE_WITH_YOUR_KEY';
-    const STRIPE_PRICE_ID = 'price_REPLACE_WITH_YOUR_PRICE_ID';
+    // ⚠️ REPLACE WITH YOUR REAL WHOP PLAN ID:
+    // 1. Go to https://whop.com/dashboard → Products → click your product
+    // 2. Under Plans, copy the Plan ID (starts with "plan_")
+    const WHOP_PLAN_ID = 'plan_REPLACE_WITH_YOUR_PLAN_ID';
 
     function openCheckoutPage() {
       document.getElementById('chatView').classList.add('hidden');
@@ -4093,7 +4092,7 @@ Build them a complete, pro-quality prompt. Respond in this exact format:
       document.getElementById('checkoutPageView').classList.remove('hidden');
       document.getElementById('checkoutError').classList.add('hidden');
       // Reset button state
-      const btn = document.getElementById('stripeCheckoutBtn');
+      const btn = document.getElementById('whopCheckoutBtn');
       btn.disabled = false;
       btn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg> Pay $9.99/month — Subscribe Now`;
     }
@@ -4104,58 +4103,61 @@ Build them a complete, pro-quality prompt. Respond in this exact format:
       document.getElementById('chatView').style.display = '';
     }
 
-    async function startStripeCheckout() {
-      const btn = document.getElementById('stripeCheckoutBtn');
+    async function startWhopCheckout() {
+      const btn = document.getElementById('whopCheckoutBtn');
       const errBox = document.getElementById('checkoutError');
       errBox.classList.add('hidden');
 
-      // Validate Stripe is configured
-      if (STRIPE_PUBLISHABLE_KEY.includes('REPLACE')) {
-        errBox.textContent = '⚠️ Stripe is not configured yet. The site owner needs to add their Stripe API keys.';
+      // Validate Whop is configured
+      if (WHOP_PLAN_ID.includes('REPLACE')) {
+        errBox.textContent = '⚠️ Whop is not configured yet. The site owner needs to add their Whop Plan ID.';
         errBox.classList.remove('hidden');
         return;
       }
 
       // Show loading
       btn.disabled = true;
-      btn.innerHTML = `<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> Redirecting to Stripe...`;
+      btn.innerHTML = `<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> Opening Whop checkout...`;
 
       try {
-        const stripe = Stripe(STRIPE_PUBLISHABLE_KEY);
+        const returnUrl = window.location.origin + window.location.pathname + '?status=succeeded';
 
-        const { error } = await stripe.redirectToCheckout({
-          lineItems: [{ price: STRIPE_PRICE_ID, quantity: 1 }],
-          mode: 'subscription',
-          successUrl: window.location.origin + window.location.pathname + '?checkout=success',
-          cancelUrl: window.location.origin + window.location.pathname + '?checkout=cancel',
-          customerEmail: currentUser?.email && !currentUser.isGuest ? currentUser.email : undefined
+        window.WhopElements().checkout.create({
+          plan: WHOP_PLAN_ID,
+          returnUrl: returnUrl,
+          onComplete: (payload) => {
+            // Payment completed via embed overlay
+            setTier('pro');
+            pushNotification('🎉 Payment successful!', 'Welcome to Trinity Pro — all features are now unlocked.', 'success');
+            closeCheckoutPage();
+          }
         });
 
-        if (error) {
-          errBox.textContent = error.message;
-          errBox.classList.remove('hidden');
+        // Reset button after a short delay (Whop opens an overlay)
+        setTimeout(() => {
           btn.disabled = false;
           btn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg> Pay $9.99/month — Subscribe Now`;
-        }
+        }, 2000);
+
       } catch (err) {
-        errBox.textContent = 'Something went wrong. Please try again.';
+        errBox.textContent = 'Something went wrong opening checkout. Please try again.';
         errBox.classList.remove('hidden');
         btn.disabled = false;
         btn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg> Pay $9.99/month — Subscribe Now`;
       }
     }
 
-    // Handle Stripe redirect back (success or cancel)
+    // Handle Whop redirect back (if user completes checkout in new tab)
     function handleCheckoutReturn() {
       const params = new URLSearchParams(window.location.search);
-      const checkoutResult = params.get('checkout');
-      if (checkoutResult === 'success') {
+      const status = params.get('status');
+      if (status === 'succeeded') {
         // Clean the URL
         window.history.replaceState({}, '', window.location.pathname);
-        // Activate Pro — in production, verify this server-side via Stripe webhooks
+        // Activate Pro — in production, verify via Whop webhooks
         setTier('pro');
         pushNotification('🎉 Payment successful!', 'Welcome to Trinity Pro — all features are now unlocked.', 'success');
-      } else if (checkoutResult === 'cancel') {
+      } else if (status === 'failed' || status === 'canceled') {
         window.history.replaceState({}, '', window.location.pathname);
         pushNotification('Payment cancelled. No charges were made.');
       }
