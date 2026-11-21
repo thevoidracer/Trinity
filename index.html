@@ -1834,7 +1834,7 @@
       renderSidebarConnectors();
 
       const isOn = userState.connectors[id].connected;
-      const aiModelIds = ['mistral','deepseek','openai','claude','gemini','grok','perplexity','cohere','together','huggingface','groq'];
+      const aiModelIds = ['mistral','deepseek','openai','claude','grok','perplexity','cohere','together','huggingface','groq'];
       if (aiModelIds.includes(id)) updateRouterModeLabel();
       if (isOn && aiModelIds.includes(id)) {
         pushNotification(`${item.name} connected — AI responses will now route through ${item.name}'s model.`);
@@ -2264,22 +2264,25 @@
 
     // ── AI Model Routing (zero-setup via Pollinations) ──
     function getConnectedAIModel() {
-      // Check which AI model connectors are active — return the Pollinations model name
+      // Only route through non-Google "AI Models" category connectors.
+      // The 'gemini' connector is a Google Suite integration (formatting/export),
+      // NOT an AI model switch — exclude it from routing to avoid 404s.
       const modelMap = {
         'mistral': 'mistral',
-        'deepseek': 'deepseek',
+        'deepseek': 'deepseek-chat',
         'openai': 'openai',
         'claude': 'claude',
-        'gemini': 'gemini',
-        'grok': 'grok',
+        'grok': 'qwen',
         'perplexity': 'searchgpt',
         'cohere': 'command-r-plus',
         'together': 'llama',
         'huggingface': 'llama',
         'groq': 'llama'
       };
+      // Check only non-Google AI model connectors
       for (const [connId, pollModel] of Object.entries(modelMap)) {
-        if (userState.connectors[connId]?.connected) return pollModel;
+        const cat = (CONNECTORS_CATALOG.find(c => c.id === connId) || {}).cat;
+        if (cat === 'AI Models' && userState.connectors[connId]?.connected) return pollModel;
       }
       return 'openai'; // default
     }
