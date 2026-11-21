@@ -692,6 +692,12 @@
             class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-blue-600" />
           <p class="text-[11px] text-slate-400 mt-1">Paste an OpenRouter (starts with sk-or-) or Gemini (starts with AIza) key. Stored privately in your account.</p>
         </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Google API Client ID <span class="text-slate-400 font-normal">(optional — enables real Google Docs/Sheets/Slides integration)</span></label>
+          <input id="googleClientIdInput" type="text" placeholder="123456789-xxxxxxxxx.apps.googleusercontent.com"
+            class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-blue-600" />
+          <p class="text-[11px] text-slate-400 mt-1">From Google Cloud Console → APIs → Credentials → OAuth Client ID. When set, Trinity creates docs directly in your Drive.</p>
+        </div>
         <div class="p-3 rounded-xl bg-blue-50 border border-blue-100 text-xs text-blue-800">
           <strong>Silent Background Learning:</strong> Trinity has learned <span id="settingsLearnedCount">0</span> contextual facts from your conversations to tailor future answers.
         </div>
@@ -1826,7 +1832,17 @@
       persistWorkspaceState();
       renderConnectorsGrid();
       renderSidebarConnectors();
-      pushNotification(`${item.name} ${userState.connectors[id].connected ? 'connected' : 'disconnected'}.`);
+
+      const isOn = userState.connectors[id].connected;
+      const aiModelIds = ['mistral','deepseek','openai','claude','gemini','grok','perplexity','cohere','together','huggingface','groq'];
+      if (aiModelIds.includes(id)) updateRouterModeLabel();
+      if (isOn && aiModelIds.includes(id)) {
+        pushNotification(`${item.name} connected — AI responses will now route through ${item.name}'s model.`);
+      } else if (isOn && id === 'youtube') {
+        pushNotification(`YouTube connected — paste any video URL to get a full transcript & summary.`);
+      } else {
+        pushNotification(`${item.name} ${isOn ? 'connected' : 'disconnected'}.`);
+      }
     }
 
     function connectAllGoogleApps() {
@@ -1865,9 +1881,136 @@
       pushNotification(`${item ? item.name : 'Connector'} linked and saved.`);
     }
 
-    function exportToGoogleApp(type, encodedText) {
+    // ── Google API Integration (prepped — activate by pasting Client ID in Settings) ──
+    const GOOGLE_CLIENT_ID = (userState.connectors?.google_oauth?.secret || '').trim();
+    let googleAccessToken = null;
+
+    function isGoogleApiReady() { return !!GOOGLE_CLIENT_ID && !!googleAccessToken; }
+
+    function getGoogleClientId() {
+      return (userState.connectors?.google_oauth?.secret || '').trim();
+    }
+
+    async function initGoogleAuth() {
+      const clientId = getGoogleClientId();
+      if (!clientId) return;
+      // Load Google Identity Services library
+      if (!document.getElementById('gis-script')) {
+        const script = document.createElement('script');
+        script.id = 'gis-script';
+        script.src = 'https://accounts.google.com/gsi/client';
+        script.onload = () => startGoogleTokenFlow(clientId);
+        document.head.appendChild(script);
+      } else if (window.google?.accounts) {
+        startGoogleTokenFlow(clientId);
+      }
+    }
+
+    function startGoogleTokenFlow(clientId) {
+      const tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: clientId,
+        scope: 'https://www.googleapis.com/auth/documents https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/presentations https://www.googleapis.com/auth/gmail.compose https://www.googleapis.com/auth/calendar.events',
+        callback: (resp) => {
+          if (resp.access_token) {
+            googleAccessToken = resp.access_token;
+            pushNotification('Google account connected! You can now create Docs, Sheets & Slides directly.');
+            // Mark all Google connectors as truly connected
+            ['gdocs','gsheets','gslides','gmail','gcal'].forEach(id => {
+              userState.connectors[id] = { ...(userState.connectors[id] || {}), connected: true, liveApi: true };
+            });
+            persistWorkspaceState();
+            renderConnectorsGrid();
+            renderSidebarConnectors();
+          }
+        }
+      });
+      tokenClient.requestAccessToken();
+    }
+
+    async function googleCreateDoc(title, bodyContent) {
+      if (!isGoogleApiReady()) return null;
+      try {
+        // Step 1: Create the doc
+        const createRes = await fetch('https://docs.googleapis.com/v1/documents', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${googleAccessToken}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title })
+        });
+        if (!createRes.ok) throw new Error('Doc creation failed');
+        const doc = await createRes.json();
+
+        // Step 2: Insert content
+        if (bodyContent) {
+          await fetch(`https://docs.googleapis.com/v1/documents/${doc.documentId}:batchUpdate`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${googleAccessToken}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              requests: [{ insertText: { location: { index: 1 }, text: bodyContent } }]
+            })
+          });
+        }
+        return { id: doc.documentId, url: `https://docs.google.com/document/d/${doc.documentId}/edit` };
+      } catch (err) { console.warn('Google Docs API error:', err); return null; }
+    }
+
+    async function googleCreateSheet(title, rows) {
+      if (!isGoogleApiReady()) return null;
+      try {
+        const createRes = await fetch('https://sheets.googleapis.com/v4/spreadsheets', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${googleAccessToken}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ properties: { title } })
+        });
+        if (!createRes.ok) throw new Error('Sheet creation failed');
+        const sheet = await createRes.json();
+
+        if (rows?.length) {
+          await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheet.spreadsheetId}/values/Sheet1!A1:append?valueInputOption=USER_ENTERED`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${googleAccessToken}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ values: rows })
+          });
+        }
+        return { id: sheet.spreadsheetId, url: `https://docs.google.com/spreadsheets/d/${sheet.spreadsheetId}/edit` };
+      } catch (err) { console.warn('Google Sheets API error:', err); return null; }
+    }
+
+    async function googleCreateSlides(title, slidesData) {
+      if (!isGoogleApiReady()) return null;
+      try {
+        const createRes = await fetch('https://slides.googleapis.com/v1/presentations', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${googleAccessToken}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title })
+        });
+        if (!createRes.ok) throw new Error('Slides creation failed');
+        const pres = await createRes.json();
+        return { id: pres.presentationId, url: `https://docs.google.com/presentation/d/${pres.presentationId}/edit` };
+      } catch (err) { console.warn('Google Slides API error:', err); return null; }
+    }
+
+    async function exportToGoogleApp(type, encodedText) {
       const text = decodeURIComponent(encodedText);
-      // Copy to clipboard using modern API with fallback
+
+      // ── If Google API is live, create directly ──
+      if (isGoogleApiReady() && type !== 'gmail') {
+        const title = 'Trinity AI — ' + new Date().toLocaleDateString();
+        let result = null;
+        if (type === 'docs') result = await googleCreateDoc(title, text);
+        else if (type === 'sheets') {
+          const rows = text.split('\n').map(line => line.split('|').map(c => c.trim()).filter(Boolean));
+          result = await googleCreateSheet(title, rows);
+        }
+        else if (type === 'slides') result = await googleCreateSlides(title);
+        if (result?.url) {
+          window.open(result.url, '_blank', 'noopener,noreferrer');
+          const appName = { docs: 'Docs', sheets: 'Sheets', slides: 'Slides' };
+          pushNotification(`✓ Created in Google ${appName[type]}! Opening now...`);
+          return;
+        }
+      }
+
+      // ── Fallback: clipboard + open blank Google app ──
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(text).catch(() => {});
       } else {
@@ -1879,7 +2022,6 @@
         document.body.removeChild(temp);
       }
 
-      // Extract subject line for Gmail if present
       const subjectMatch = text.match(/Subject:\s*(.+)/i);
       const gmailSubject = subjectMatch ? encodeURIComponent(subjectMatch[1].trim()) : '';
       const bodyForGmail = text.replace(/Subject:\s*.+\n?/i, '').replace(/To:\s*.+\n?/i, '').trim();
@@ -1982,6 +2124,7 @@
 
     function openSettingsModal() {
       document.getElementById('apiKeyInput').value = userState.apiKey || '';
+      document.getElementById('googleClientIdInput').value = userState.connectors?.google_oauth?.secret || '';
       const cfg = JSON.parse(localStorage.getItem(SUPA_CONFIG_KEY) || 'null');
       document.getElementById('supaUrlInput').value = cfg?.url || '';
       document.getElementById('supaKeyInput').value = cfg?.anonKey || '';
@@ -2009,6 +2152,17 @@
         pushNotification('Supabase disconnected. Switched to local-only mode.');
       }
 
+      // Save Google Client ID if provided
+      const gClientId = document.getElementById('googleClientIdInput').value.trim();
+      if (gClientId) {
+        userState.connectors.google_oauth = { connected: true, secret: gClientId };
+        // Auto-init Google auth flow
+        setTimeout(() => initGoogleAuth(), 500);
+      } else if (userState.connectors?.google_oauth) {
+        delete userState.connectors.google_oauth;
+        googleAccessToken = null;
+      }
+
       persistWorkspaceState();
       updateSupaStatusPill();
       closeModal('settingsModal');
@@ -2025,6 +2179,109 @@
     function extractUrls(text) {
       const matches = text.match(/https?:\/\/[^\s<>"{}|\\^`[\]]+/gi);
       return matches || [];
+    }
+
+    // ── YouTube Transcript Extraction (zero-setup) ──
+    function extractYouTubeVideoId(url) {
+      try {
+        const u = new URL(url);
+        if (u.hostname.includes('youtu.be')) return u.pathname.slice(1).split('/')[0];
+        if (u.hostname.includes('youtube.com') || u.hostname.includes('youtube-nocookie.com')) {
+          if (u.pathname === '/watch') return u.searchParams.get('v');
+          const m = u.pathname.match(/\/(?:embed|v|shorts)\/([a-zA-Z0-9_-]{11})/);
+          if (m) return m[1];
+        }
+      } catch {}
+      return null;
+    }
+
+    function isYouTubeUrl(url) { return !!extractYouTubeVideoId(url); }
+
+    async function fetchYouTubeTranscript(videoId) {
+      // Try multiple free Invidious instances for captions (no API key needed)
+      const instances = [
+        'https://inv.nadeko.net',
+        'https://invidious.nerdvpn.de',
+        'https://iv.datura.network',
+        'https://invidious.privacyredirect.com'
+      ];
+      for (const base of instances) {
+        try {
+          // First get available caption tracks
+          const capsRes = await fetch(`${base}/api/v1/captions/${videoId}`, { signal: AbortSignal.timeout(6000) });
+          if (!capsRes.ok) continue;
+          const capsData = await capsRes.json();
+          const tracks = capsData?.captions || [];
+          if (!tracks.length) continue;
+
+          // Prefer English, fall back to first available
+          const enTrack = tracks.find(t => t.language_code?.startsWith('en')) || tracks[0];
+          const captionUrl = enTrack.url?.startsWith('http') ? enTrack.url : `${base}${enTrack.url}`;
+
+          const txtRes = await fetch(captionUrl, { signal: AbortSignal.timeout(6000) });
+          if (!txtRes.ok) continue;
+          const rawVtt = await txtRes.text();
+
+          // Strip VTT/SRT formatting → clean text
+          const lines = rawVtt.split('\n')
+            .filter(l => l.trim() && !l.match(/^\d+$/) && !l.match(/-->/) && !l.match(/^WEBVTT/) && !l.match(/^Kind:/) && !l.match(/^Language:/))
+            .map(l => l.replace(/<[^>]+>/g, '').trim())
+            .filter(Boolean);
+          const deduped = lines.filter((l, i) => i === 0 || l !== lines[i - 1]);
+          const transcript = deduped.join(' ').slice(0, 8000);
+          if (transcript.length > 50) return transcript;
+        } catch {}
+      }
+
+      // Fallback: try Jina reader on the YouTube watch page
+      try {
+        const jinaRes = await fetch(`https://r.jina.ai/https://www.youtube.com/watch?v=${videoId}`, {
+          headers: { 'Accept': 'text/plain' },
+          signal: AbortSignal.timeout(8000)
+        });
+        if (jinaRes.ok) {
+          const text = await jinaRes.text();
+          if (text.length > 100) return text.slice(0, 8000);
+        }
+      } catch {}
+
+      return null;
+    }
+
+    async function fetchYouTubeVideoInfo(videoId) {
+      // Get basic video metadata via noembed (free, no key)
+      try {
+        const res = await fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${videoId}`, {
+          signal: AbortSignal.timeout(5000)
+        });
+        if (res.ok) {
+          const data = await res.json();
+          return { title: data.title || '', author: data.author_name || '', thumbnail: data.thumbnail_url || '' };
+        }
+      } catch {}
+      return { title: '', author: '', thumbnail: '' };
+    }
+
+    // ── AI Model Routing (zero-setup via Pollinations) ──
+    function getConnectedAIModel() {
+      // Check which AI model connectors are active — return the Pollinations model name
+      const modelMap = {
+        'mistral': 'mistral',
+        'deepseek': 'deepseek',
+        'openai': 'openai',
+        'claude': 'claude',
+        'gemini': 'gemini',
+        'grok': 'grok',
+        'perplexity': 'searchgpt',
+        'cohere': 'command-r-plus',
+        'together': 'llama',
+        'huggingface': 'llama',
+        'groq': 'llama'
+      };
+      for (const [connId, pollModel] of Object.entries(modelMap)) {
+        if (userState.connectors[connId]?.connected) return pollModel;
+      }
+      return 'openai'; // default
     }
 
     function isBlockedDomain(urlStr) {
@@ -2102,7 +2359,16 @@
     // ---------------------------------------------------------
     function cycleRouterMode() {
       routerModeIndex = (routerModeIndex + 1) % routerModes.length;
-      document.getElementById('routerModeLabel').textContent = routerModes[routerModeIndex];
+      updateRouterModeLabel();
+    }
+
+    function updateRouterModeLabel() {
+      const base = routerModes[routerModeIndex];
+      const model = getConnectedAIModel();
+      const modelNames = { 'mistral': 'Mistral', 'deepseek': 'DeepSeek', 'claude': 'Claude', 'gemini': 'Gemini', 'grok': 'Grok', 'searchgpt': 'Perplexity', 'command-r-plus': 'Cohere', 'llama': 'Llama' };
+      const displayModel = modelNames[model] || (model === 'openai' ? '' : model);
+      const label = document.getElementById('routerModeLabel');
+      label.textContent = displayModel ? `${base} β†' ${displayModel}` : base;
     }
 
     function toggleWebResearch() {
@@ -2294,17 +2560,42 @@
       let webContextBlock = '';
       let verifiedSources = [];
 
-      // 1. Direct URL reading
+      // 1. Direct URL reading (with YouTube-specific transcript extraction)
       const urls = extractUrls(text);
       if (urls.length > 0) {
-        updateResearchStatus(researchId, `Reading live page: ${urls[0]}`, 'Extracting clean text from credible source...');
         for (const u of urls.slice(0, 2)) {
-          const siteData = await fetchLiveWebsiteContent(u);
-          if (siteData.blocked) {
-            webContextBlock += `\n[SECURITY POLICY]: The URL ${u} is from a blocked crowdsourced domain (Wikipedia/Quora/Reddit). Refuse to use this source and explain that only credible, verified sources are allowed.\n`;
-          } else if (siteData.content) {
-            webContextBlock += `\n[LIVE WEBSITE CONTENT FROM ${u}]:\n${siteData.content}\n`;
-            verifiedSources.push({ url: u, domain: siteData.domain, title: siteData.domain });
+          const ytId = extractYouTubeVideoId(u);
+          if (ytId) {
+            // ── YouTube: fetch transcript + metadata ──
+            updateResearchStatus(researchId, `Fetching YouTube transcript...`, 'Extracting captions and video info...');
+            const [transcript, videoInfo] = await Promise.all([
+              fetchYouTubeTranscript(ytId),
+              fetchYouTubeVideoInfo(ytId)
+            ]);
+            if (transcript) {
+              webContextBlock += `\n[YOUTUBE VIDEO TRANSCRIPT]\nTitle: ${videoInfo.title || 'Unknown'}\nChannel: ${videoInfo.author || 'Unknown'}\nURL: ${u}\n\nFull Transcript:\n${transcript}\n`;
+              verifiedSources.push({ url: u, domain: 'youtube.com', title: videoInfo.title || 'YouTube Video' });
+            } else {
+              // Fallback: read the page normally
+              updateResearchStatus(researchId, `Reading YouTube page content...`, 'Transcript unavailable, reading page...');
+              const siteData = await fetchLiveWebsiteContent(u);
+              if (siteData.content) {
+                webContextBlock += `\n[YOUTUBE PAGE CONTENT FROM ${u}]:\n${siteData.content}\n`;
+                verifiedSources.push({ url: u, domain: 'youtube.com', title: 'YouTube Video' });
+              } else {
+                webContextBlock += `\n[YOUTUBE VIDEO]: ${u}\nVideo ID: ${ytId}. Title: ${videoInfo.title || 'Unknown'}. Channel: ${videoInfo.author || 'Unknown'}. Transcript was not available — the video may lack captions. Summarize based on the title and any available info.\n`;
+              }
+            }
+          } else {
+            // ── Normal URL reading ──
+            updateResearchStatus(researchId, `Reading live page: ${u}`, 'Extracting clean text from credible source...');
+            const siteData = await fetchLiveWebsiteContent(u);
+            if (siteData.blocked) {
+              webContextBlock += `\n[SECURITY POLICY]: The URL ${u} is from a blocked crowdsourced domain (Wikipedia/Quora/Reddit). Refuse to use this source and explain that only credible, verified sources are allowed.\n`;
+            } else if (siteData.content) {
+              webContextBlock += `\n[LIVE WEBSITE CONTENT FROM ${u}]:\n${siteData.content}\n`;
+              verifiedSources.push({ url: u, domain: siteData.domain, title: siteData.domain });
+            }
           }
         }
       }
@@ -2359,7 +2650,7 @@ If they're "new", default to simpler language and shorter answers. If "experienc
         if (connectedIds.includes('gsheets')) connectorGuide += `- Google Sheets: Output data as a markdown table with | headers | so the user can copy it. Include formulas where useful (e.g., =SUM, =AVERAGE).\n`;
         if (connectedIds.includes('gmail')) connectorGuide += `- Gmail: When asked to draft an email, format with Subject:, To:, and Body: sections. Keep professional and concise.\n`;
         if (connectedIds.includes('gcal')) connectorGuide += `- Google Calendar: When planning schedules, output structured events with Title, Date, Time, Duration, and Description fields.\n`;
-        if (connectedIds.includes('youtube')) connectorGuide += `- YouTube: When asked about videos, provide timestamps, key points, and structured summaries.\n`;
+        if (connectedIds.includes('youtube')) connectorGuide += `- YouTube: You have REAL transcript access. When the user shares a YouTube URL, the full video transcript is automatically extracted and provided to you. Summarize key points, provide timestamps, answer questions about the video content, and extract actionable insights. If no transcript appears in context, the video may lack captions.\n`;
         if (connectedIds.includes('notion')) connectorGuide += `- Notion: Use toggle headings, callout blocks (> 💡), and database-style tables when relevant.\n`;
         if (connectedIds.includes('github')) connectorGuide += `- GitHub: Format code with proper language fences, suggest commit messages, and structure issues with title/description/labels.\n`;
         if (connectedIds.includes('slack')) connectorGuide += `- Slack: Keep messages concise. Use *bold* and bullet points. Suggest thread-worthy follow-ups separately.\n`;
@@ -2542,10 +2833,13 @@ If they're "new", default to simpler language and shorter answers. If "experienc
         return null;
       }
 
+      // Determine which AI model to route to based on connected model connectors
+      const activeModel = getConnectedAIModel();
+
       // Tier 1: Pollinations POST (text.pollinations.ai — documented keyless endpoint)
-      let r = await tryPost('https://text.pollinations.ai/openai', { model: 'openai', messages: messagesPayload }, 'poll-openai');
+      let r = await tryPost('https://text.pollinations.ai/openai', { model: activeModel, messages: messagesPayload }, `poll-${activeModel}`);
       if (r) return r;
-      r = await tryPost('https://text.pollinations.ai/', { messages: messagesPayload }, 'poll-post');
+      r = await tryPost('https://text.pollinations.ai/', { model: activeModel, messages: messagesPayload }, 'poll-post');
       if (r) return r;
 
       // Tier 2: Pollinations simple GET (most basic — no CORS POST issues)
@@ -2557,7 +2851,7 @@ If they're "new", default to simpler language and shorter answers. If "experienc
       } catch (err) { errors.push('poll-GET: ' + err.message); }
 
       // Tier 3: gen.pollinations.ai unified endpoint (newer)
-      r = await tryPost('https://gen.pollinations.ai/v1/chat/completions', { model: 'openai', messages: messagesPayload }, 'gen-openai');
+      r = await tryPost('https://gen.pollinations.ai/v1/chat/completions', { model: activeModel, messages: messagesPayload }, `gen-${activeModel}`);
       if (r) return r;
       try {
         const res = await fetch('https://gen.pollinations.ai/text/' + encodeURIComponent(lastUserMsg));
