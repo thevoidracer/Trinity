@@ -687,10 +687,18 @@
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1">AI API Key (OpenRouter or Gemini — auto-detected)</label>
-          <input id="apiKeyInput" type="password" placeholder="sk-or-... or AIzaSy..."
-            class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-blue-600" />
-          <p class="text-[11px] text-slate-400 mt-1">Paste an OpenRouter (starts with sk-or-) or Gemini (starts with AIza) key. Stored privately in your account.</p>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">AI API Key <span class="text-slate-400 font-normal">(optional — unlocks premium models)</span></label>
+          <input id="apiKeyInput" type="password" placeholder="sk-or-... / sk-... / sk-ant-... / AIzaSy..."
+            class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-blue-600"
+            oninput="updateModelSelector()" />
+          <p class="text-[11px] text-slate-400 mt-1">Supports: OpenRouter (sk-or-), OpenAI (sk-), Anthropic (sk-ant-), Gemini (AIza). Free without a key.</p>
+        </div>
+        <div id="modelSelectorContainer" class="hidden">
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Premium Model</label>
+          <select id="premiumModelSelect"
+            class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-blue-600 bg-white">
+          </select>
+          <p class="text-[11px] text-slate-400 mt-1" id="modelCostHint"></p>
         </div>
         <div>
           <label class="block text-xs font-semibold text-slate-700 mb-1">Google API Client ID <span class="text-slate-400 font-normal">(optional — enables real Google Docs/Sheets/Slides integration)</span></label>
@@ -2127,6 +2135,84 @@
       }
     }
 
+    // ---------------------------------------------------------
+    // PREMIUM MODEL SELECTOR
+    // ---------------------------------------------------------
+    const PREMIUM_MODELS = {
+      'openrouter': {
+        label: 'OpenRouter (100+ models)',
+        hint: 'Get a key free at openrouter.ai/keys — many models have free tiers',
+        models: [
+          { id: 'anthropic/claude-sonnet-4', name: 'Claude Sonnet 4 (Best balanced)', tier: 'paid' },
+          { id: 'anthropic/claude-opus-4', name: 'Claude Opus 4 (Strongest reasoning)', tier: 'paid' },
+          { id: 'openai/gpt-4o', name: 'GPT-4o (Fast + multimodal)', tier: 'paid' },
+          { id: 'openai/o3-mini', name: 'o3-mini (Advanced reasoning)', tier: 'paid' },
+          { id: 'google/gemini-2.5-pro', name: 'Gemini 2.5 Pro (1M context)', tier: 'paid' },
+          { id: 'deepseek/deepseek-chat', name: 'DeepSeek V3 (Cheap + strong)', tier: 'paid' },
+          { id: 'meta-llama/llama-3.3-70b-instruct:free', name: 'Llama 3.3 70B (FREE)', tier: 'free' },
+          { id: 'mistralai/mistral-small-3.1-24b-instruct:free', name: 'Mistral Small 3.1 (FREE)', tier: 'free' },
+          { id: 'qwen/qwen3-14b:free', name: 'Qwen3 14B (FREE)', tier: 'free' }
+        ]
+      },
+      'openai': {
+        label: 'OpenAI Direct',
+        hint: 'Get a key at platform.openai.com/api-keys',
+        models: [
+          { id: 'gpt-4o', name: 'GPT-4o (Flagship)', tier: 'paid' },
+          { id: 'gpt-4o-mini', name: 'GPT-4o Mini (Fast + cheap)', tier: 'paid' },
+          { id: 'o3-mini', name: 'o3-mini (Reasoning)', tier: 'paid' }
+        ]
+      },
+      'anthropic': {
+        label: 'Anthropic Direct',
+        hint: 'Get a key at console.anthropic.com',
+        models: [
+          { id: 'claude-sonnet-4-20250514', name: 'Claude Sonnet 4 (Best balanced)', tier: 'paid' },
+          { id: 'claude-opus-4-20250514', name: 'Claude Opus 4 (Strongest)', tier: 'paid' },
+          { id: 'claude-haiku-3-5-20241022', name: 'Claude Haiku 3.5 (Fast + cheap)', tier: 'paid' }
+        ]
+      },
+      'gemini': {
+        label: 'Google Gemini Direct',
+        hint: 'Get a key free at ai.google.dev',
+        models: [
+          { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash (Free tier)', tier: 'free' },
+          { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro (1M tokens)', tier: 'paid' }
+        ]
+      }
+    };
+
+    function detectKeyProvider(key) {
+      if (!key) return null;
+      if (key.startsWith('sk-ant-')) return 'anthropic';
+      if (key.startsWith('sk-or-')) return 'openrouter';
+      if (key.startsWith('sk-')) return 'openai';
+      if (key.startsWith('AIza')) return 'gemini';
+      return null;
+    }
+
+    function updateModelSelector() {
+      const key = document.getElementById('apiKeyInput').value.trim();
+      const container = document.getElementById('modelSelectorContainer');
+      const select = document.getElementById('premiumModelSelect');
+      const hint = document.getElementById('modelCostHint');
+      const provider = detectKeyProvider(key);
+
+      if (!provider) {
+        container.classList.add('hidden');
+        return;
+      }
+
+      const cfg = PREMIUM_MODELS[provider];
+      container.classList.remove('hidden');
+      hint.textContent = cfg.hint;
+
+      const savedModel = userState.premiumModel || '';
+      select.innerHTML = cfg.models.map(m =>
+        `<option value="${m.id}" ${m.id === savedModel ? 'selected' : ''}>${m.name}${m.tier === 'free' ? ' ✦' : ''}</option>`
+      ).join('');
+    }
+
     function openSettingsModal() {
       document.getElementById('apiKeyInput').value = userState.apiKey || '';
       document.getElementById('googleClientIdInput').value = userState.connectors?.google_oauth?.secret || '';
@@ -2135,11 +2221,20 @@
       document.getElementById('supaKeyInput').value = cfg?.anonKey || '';
       updateAdaptiveIQBadge();
       updateSupaStatusPill();
+      updateModelSelector();
       document.getElementById('settingsModal').classList.remove('hidden');
     }
 
     function saveSettings() {
       userState.apiKey = document.getElementById('apiKeyInput').value.trim();
+      const provider = detectKeyProvider(userState.apiKey);
+      if (provider) {
+        userState.premiumModel = document.getElementById('premiumModelSelect').value;
+        userState.premiumProvider = provider;
+      } else {
+        delete userState.premiumModel;
+        delete userState.premiumProvider;
+      }
       const supaUrl = document.getElementById('supaUrlInput').value.trim();
       const supaKey = document.getElementById('supaKeyInput').value.trim();
       const prevCfg = JSON.parse(localStorage.getItem(SUPA_CONFIG_KEY) || 'null');
@@ -2169,9 +2264,16 @@
       }
 
       persistWorkspaceState();
+      updateRouterModeLabel();
       updateSupaStatusPill();
       closeModal('settingsModal');
-      pushNotification('Workspace settings saved.');
+      if (provider && userState.premiumModel) {
+        const cfg = PREMIUM_MODELS[provider];
+        const modelEntry = cfg?.models?.find(m => m.id === userState.premiumModel);
+        pushNotification(`Settings saved β€" using ${modelEntry?.name || userState.premiumModel} via ${cfg?.label || provider}.`);
+      } else {
+        pushNotification('Workspace settings saved.');
+      }
     }
 
     function closeModal(id) {
@@ -2372,11 +2474,24 @@
 
     function updateRouterModeLabel() {
       const base = routerModes[routerModeIndex];
+      const label = document.getElementById('routerModeLabel');
+
+      // Show premium model name if a key + model is set
+      const provider = detectKeyProvider(userState.apiKey);
+      if (provider && userState.premiumModel) {
+        const cfg = PREMIUM_MODELS[provider];
+        const modelEntry = cfg?.models?.find(m => m.id === userState.premiumModel);
+        const shortName = modelEntry ? modelEntry.name.split('(')[0].trim() : userState.premiumModel.split('/').pop();
+        label.textContent = `${base} → ${shortName}`;
+        label.title = `Premium: ${userState.premiumModel}`;
+        return;
+      }
+
+      // Otherwise show Pollinations connector model
       const model = getConnectedAIModel();
       const modelNames = { 'mistral': 'Mistral', 'deepseek': 'DeepSeek', 'claude': 'Claude', 'gemini': 'Gemini', 'grok': 'Grok', 'searchgpt': 'Perplexity', 'command-r-plus': 'Cohere', 'llama': 'Llama' };
       const displayModel = modelNames[model] || (model === 'openai' ? '' : model);
-      const label = document.getElementById('routerModeLabel');
-      label.textContent = displayModel ? `${base} β†' ${displayModel}` : base;
+      label.textContent = displayModel ? `${base} → ${displayModel}` : base;
     }
 
     function toggleWebResearch() {
@@ -2727,21 +2842,22 @@ Rules for image generation:
         ...history.slice(-10).map(m => ({ role: m.role, content: m.content }))
       ];
 
-      // ── Path A: User pasted their own OpenRouter key → call OpenRouter directly ──
-      if (apiKey.startsWith('sk-or-')) {
+      const provider = detectKeyProvider(apiKey);
+      const selectedModel = userState.premiumModel || '';
+
+      // ── Path A: OpenRouter key → Claude, GPT-4o, Gemini, Llama, etc. ──
+      if (provider === 'openrouter') {
         try {
+          const model = selectedModel || 'meta-llama/llama-3.3-70b-instruct:free';
           const resp = await fetch('https://openrouter.ai/api/v1/chat/completions', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${apiKey}`,
-              'HTTP-Referer': 'https://trinityaisuper.netlify.app',
+              'HTTP-Referer': location.origin || 'https://thevoidracer.github.io',
               'X-Title': 'Trinity AI'
             },
-            body: JSON.stringify({
-              model: 'meta-llama/llama-3.3-70b-instruct:free',
-              messages
-            })
+            body: JSON.stringify({ model, messages })
           });
           if (resp.ok) {
             const data = await resp.json();
@@ -2755,14 +2871,70 @@ Rules for image generation:
         }
       }
 
-      // ── Path B: User pasted a Gemini key → call Gemini directly ──
-      else if (apiKey.startsWith('AIza')) {
+      // ── Path B: OpenAI direct key → GPT-4o, o3-mini ──
+      else if (provider === 'openai') {
         try {
+          const model = selectedModel || 'gpt-4o-mini';
+          const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({ model, messages })
+          });
+          if (resp.ok) {
+            const data = await resp.json();
+            const out = data?.choices?.[0]?.message?.content;
+            if (out) return out;
+          } else {
+            console.warn('OpenAI error:', resp.status, await resp.text());
+          }
+        } catch (err) {
+          console.warn('OpenAI request failed:', err);
+        }
+      }
+
+      // ── Path C: Anthropic direct key → Claude Sonnet/Opus ──
+      else if (provider === 'anthropic') {
+        try {
+          const model = selectedModel || 'claude-sonnet-4-20250514';
+          const resp = await fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-api-key': apiKey,
+              'anthropic-version': '2023-06-01',
+              'anthropic-dangerous-direct-browser-access': 'true'
+            },
+            body: JSON.stringify({
+              model,
+              max_tokens: 4096,
+              system: systemPrompt,
+              messages: history.slice(-10).map(m => ({ role: m.role, content: m.content }))
+            })
+          });
+          if (resp.ok) {
+            const data = await resp.json();
+            const out = data?.content?.[0]?.text;
+            if (out) return out;
+          } else {
+            console.warn('Anthropic error:', resp.status, await resp.text());
+          }
+        } catch (err) {
+          console.warn('Anthropic request failed:', err);
+        }
+      }
+
+      // ── Path D: Gemini key → Gemini Pro/Flash ──
+      else if (provider === 'gemini') {
+        try {
+          const model = selectedModel || 'gemini-2.5-flash';
           const formattedContents = history.slice(-10).map(m => ({
             role: m.role === 'assistant' ? 'model' : 'user',
             parts: [{ text: m.content }]
           }));
-          const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`, {
+          const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -2878,7 +3050,7 @@ Rules for image generation:
       } catch (err) { errors.push('gen-GET: ' + err.message); }
 
       console.error('All AI backends failed:', errors);
-      return `I could not reach any AI backend. This may be a network restriction in this environment.\n\nTo fix this, go to Settings (gear icon) and paste a free API key:\n• **Gemini**: free at ai.google.dev\n• **OpenRouter**: free at openrouter.ai/keys\n\nDebug: ${errors.slice(0, 3).join(' | ')}`;
+      return `I could not reach any AI backend. This may be a network restriction in this environment.\n\nTo fix this, go to Settings (gear icon) and paste an API key:\n• **Gemini**: free at ai.google.dev\n• **OpenRouter**: free tier at openrouter.ai/keys (access Claude, GPT-4o & 100+ models)\n• **OpenAI**: platform.openai.com/api-keys\n• **Anthropic**: console.anthropic.com\n\nDebug: ${errors.slice(0, 3).join(' | ')}`;
     }
 
     // ---------------------------------------------------------
