@@ -401,6 +401,13 @@
           </div>
         </div>
 
+        <!-- Upgrade / Pricing Link -->
+        <div id="sidebarPricingLink" class="px-3 pb-2">
+          <button onclick="openPricingPage(); toggleMobileSidebar(false);" class="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold text-xs flex items-center justify-center gap-2 shadow-sm transition cursor-pointer">
+            <span>💎</span> View Plans & Pricing
+          </button>
+        </div>
+
         <!-- Bottom User Profile & Settings -->
         <div class="p-3 border-t border-slate-200 bg-white flex items-center justify-between gap-2">
           <div class="flex items-center gap-2.5 min-w-0">
@@ -425,6 +432,153 @@
 
       <!-- CENTER CONVERSATION COLUMN -->
       <section id="centerColumn" class="flex-1 flex flex-col min-w-0 bg-white">
+
+        <!-- ===== PRICING PAGE VIEW (hidden by default) ===== -->
+        <div id="pricingPageView" class="hidden flex-1 flex flex-col overflow-hidden">
+          <div class="h-13 px-4 border-b border-slate-200 flex items-center justify-between shrink-0">
+            <div class="flex items-center gap-2.5">
+              <button onclick="toggleMobileSidebar(true)" class="lg:hidden p-1.5 rounded-lg text-slate-600 hover:bg-slate-100">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+              </button>
+              <h2 class="font-semibold text-sm text-slate-900">💎 Plans & Pricing</h2>
+            </div>
+            <button onclick="closePricingPage()" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-xs font-medium text-slate-700 cursor-pointer">← Back to Chat</button>
+          </div>
+
+          <div class="flex-1 overflow-y-auto px-4 py-8">
+            <div class="max-w-3xl mx-auto text-center space-y-8">
+              <!-- Pricing Header -->
+              <div class="space-y-2">
+                <h1 class="text-2xl sm:text-3xl font-bold text-slate-900">Choose Your Plan</h1>
+                <p class="text-sm text-slate-500 max-w-lg mx-auto">Level up your AI skills with Trinity. Free gets you started — Pro unlocks everything.</p>
+              </div>
+
+              <!-- Pricing Cards -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-2xl mx-auto">
+
+                <!-- FREE PLAN -->
+                <div class="relative rounded-2xl border-2 border-slate-200 bg-white p-6 text-left space-y-5 shadow-sm">
+                  <div class="space-y-1">
+                    <div class="flex items-center gap-2">
+                      <span class="text-lg">🆓</span>
+                      <h3 class="text-lg font-bold text-slate-900">Free</h3>
+                    </div>
+                    <div class="flex items-baseline gap-1">
+                      <span class="text-3xl font-extrabold text-slate-900">$0</span>
+                      <span class="text-sm text-slate-400">/ forever</span>
+                    </div>
+                    <p class="text-xs text-slate-500">Start learning AI for free. No credit card needed.</p>
+                  </div>
+
+                  <div class="space-y-2.5">
+                    <div class="flex items-start gap-2.5">
+                      <svg class="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                      <span class="text-xs text-slate-700"><strong>70 AI credits per day</strong></span>
+                    </div>
+                    <div class="flex items-start gap-2.5">
+                      <svg class="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                      <span class="text-xs text-slate-700">AI Chat with auto model fallback</span>
+                    </div>
+                    <div class="flex items-start gap-2.5">
+                      <svg class="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                      <span class="text-xs text-slate-700">Prompt Critic (unlimited)</span>
+                    </div>
+                    <div class="flex items-start gap-2.5">
+                      <svg class="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                      <span class="text-xs text-slate-700">Chat history & conversations</span>
+                    </div>
+                    <div class="flex items-start gap-2.5">
+                      <svg class="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                      <span class="text-xs text-slate-700">Access to free AI models</span>
+                    </div>
+                    <div class="flex items-start gap-2.5">
+                      <svg class="w-4 h-4 text-slate-300 shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                      <span class="text-xs text-slate-400">Lessons & guided learning</span>
+                    </div>
+                    <div class="flex items-start gap-2.5">
+                      <svg class="w-4 h-4 text-slate-300 shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                      <span class="text-xs text-slate-400">Projects, Skills & Connectors</span>
+                    </div>
+                    <div class="flex items-start gap-2.5">
+                      <svg class="w-4 h-4 text-slate-300 shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                      <span class="text-xs text-slate-400">Prompt Builder & Coach Mode</span>
+                    </div>
+                  </div>
+
+                  <button id="pricingFreeBtn" onclick="setTier('free'); closePricingPage();" class="w-full py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-sm transition cursor-pointer border border-slate-200">
+                    Current Plan
+                  </button>
+                </div>
+
+                <!-- PRO PLAN -->
+                <div class="relative rounded-2xl border-2 border-blue-500 bg-gradient-to-b from-blue-50/60 to-white p-6 text-left space-y-5 shadow-lg shadow-blue-100/50">
+                  <!-- Popular badge -->
+                  <div class="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-blue-600 text-white text-[10px] font-bold uppercase tracking-wider shadow-sm">Most Popular</div>
+
+                  <div class="space-y-1">
+                    <div class="flex items-center gap-2">
+                      <span class="text-lg">🚀</span>
+                      <h3 class="text-lg font-bold text-slate-900">Pro</h3>
+                    </div>
+                    <div class="flex items-baseline gap-1">
+                      <span class="text-3xl font-extrabold text-blue-700">$9.99</span>
+                      <span class="text-sm text-slate-400">/ month</span>
+                    </div>
+                    <p class="text-xs text-slate-500">Unlock every feature. Master AI with the full toolkit.</p>
+                  </div>
+
+                  <div class="space-y-2.5">
+                    <div class="flex items-start gap-2.5">
+                      <svg class="w-4 h-4 text-blue-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                      <span class="text-xs text-slate-700"><strong>200 AI credits per day</strong></span>
+                    </div>
+                    <div class="flex items-start gap-2.5">
+                      <svg class="w-4 h-4 text-blue-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                      <span class="text-xs text-slate-700">Everything in Free, plus:</span>
+                    </div>
+                    <div class="flex items-start gap-2.5">
+                      <svg class="w-4 h-4 text-blue-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                      <span class="text-xs text-slate-700">📚 Full Lesson Library (all categories)</span>
+                    </div>
+                    <div class="flex items-start gap-2.5">
+                      <svg class="w-4 h-4 text-blue-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                      <span class="text-xs text-slate-700">📁 Projects & organized workspaces</span>
+                    </div>
+                    <div class="flex items-start gap-2.5">
+                      <svg class="w-4 h-4 text-blue-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                      <span class="text-xs text-slate-700">⚡ Skills & custom system prompts</span>
+                    </div>
+                    <div class="flex items-start gap-2.5">
+                      <svg class="w-4 h-4 text-blue-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                      <span class="text-xs text-slate-700">🔌 56+ App Connectors</span>
+                    </div>
+                    <div class="flex items-start gap-2.5">
+                      <svg class="w-4 h-4 text-blue-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                      <span class="text-xs text-slate-700">🛠️ Prompt Builder (guided creation)</span>
+                    </div>
+                    <div class="flex items-start gap-2.5">
+                      <svg class="w-4 h-4 text-blue-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                      <span class="text-xs text-slate-700">🎓 Coach Mode (interactive tutoring)</span>
+                    </div>
+                    <div class="flex items-start gap-2.5">
+                      <svg class="w-4 h-4 text-blue-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                      <span class="text-xs text-slate-700">Priority access to premium models</span>
+                    </div>
+                  </div>
+
+                  <button id="pricingProBtn" onclick="setTier('pro'); updatePricingButtons(); pushNotification('🎉 Welcome to Pro!', 'You now have full access to every feature.', 'success');" class="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm transition cursor-pointer shadow-sm shadow-blue-600/25">
+                    Upgrade to Pro
+                  </button>
+                </div>
+
+              </div>
+
+              <!-- Bottom FAQ note -->
+              <p class="text-[11px] text-slate-400 max-w-md mx-auto">Credits reset daily at midnight. Free models (Llama, Groq) cost 0 credits. Cancel anytime.</p>
+            </div>
+          </div>
+        </div>
+
         <!-- ===== LESSONS PAGE VIEW (hidden by default) ===== -->
         <div id="lessonsPageView" class="hidden flex-1 flex flex-col overflow-hidden">
           <div class="h-13 px-4 border-b border-slate-200 flex items-center justify-between shrink-0">
@@ -1248,7 +1402,7 @@
     function showProGate(featureName) {
       const names = { lessons: 'Lessons', skills: 'Skills', projects: 'Projects', connectors: 'Connectors', coach: 'Coach Mode', prompt_builder: 'Prompt Builder' };
       const label = names[featureName] || featureName;
-      pushNotification(`🔒 ${label} requires a Pro plan. Upgrade in Settings to unlock everything.`);
+      pushNotification(`🔒 ${label} is a Pro feature`, `<span class="underline cursor-pointer" onclick="openPricingPage()">View Plans & Pricing</span> to unlock everything.`, 'warning');
     }
 
     function setTier(tier) {
@@ -1746,7 +1900,7 @@
       if (!('tier' in userState)) userState.tier = 'free';
       persistWorkspaceState();
       // Init credits display and pro lock tags after state is ready
-      setTimeout(() => { updateCreditsDisplay(); updateTierUI(); updateProLockTags(); }, 100);
+      setTimeout(() => { updateCreditsDisplay(); updateTierUI(); updateProLockTags(); updatePricingButtons(); }, 100);
     }
 
     function persistWorkspaceState() {
@@ -3813,6 +3967,44 @@ Build them a complete, pro-quality prompt. Respond in this exact format:
     // LESSON LIBRARY — DEDICATED PAGE
     // ---------------------------------------------------------
     let activeLesonFilter = 'all';
+
+    function openPricingPage() {
+      document.getElementById('chatView').classList.add('hidden');
+      document.getElementById('lessonsPageView').classList.add('hidden');
+      document.getElementById('pricingPageView').classList.remove('hidden');
+      updatePricingButtons();
+    }
+
+    function closePricingPage() {
+      document.getElementById('pricingPageView').classList.add('hidden');
+      document.getElementById('chatView').classList.remove('hidden');
+      document.getElementById('chatView').style.display = '';
+    }
+
+    function updatePricingButtons() {
+      const tier = userState.tier || 'free';
+      const freeBtn = document.getElementById('pricingFreeBtn');
+      const proBtn = document.getElementById('pricingProBtn');
+      const link = document.getElementById('sidebarPricingLink');
+      if (freeBtn && proBtn) {
+        if (tier === 'pro') {
+          freeBtn.textContent = 'Downgrade to Free';
+          freeBtn.className = 'w-full py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-500 font-semibold text-sm transition cursor-pointer border border-slate-200';
+          proBtn.textContent = '✓ Current Plan';
+          proBtn.className = 'w-full py-2.5 rounded-xl bg-blue-100 text-blue-700 font-semibold text-sm border-2 border-blue-300 cursor-default';
+          proBtn.onclick = null;
+        } else {
+          freeBtn.textContent = '✓ Current Plan';
+          freeBtn.className = 'w-full py-2.5 rounded-xl bg-slate-100 text-slate-700 font-semibold text-sm border-2 border-slate-300 cursor-default';
+          freeBtn.onclick = null;
+          proBtn.textContent = 'Upgrade to Pro';
+          proBtn.className = 'w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm transition cursor-pointer shadow-sm shadow-blue-600/25';
+          proBtn.onclick = () => { setTier('pro'); updatePricingButtons(); pushNotification('🎉 Welcome to Pro!', 'You now have full access to every feature.', 'success'); };
+        }
+      }
+      // Hide pricing link when user is Pro
+      if (link) link.style.display = tier === 'pro' ? 'none' : '';
+    }
 
     function openLessonsPage() {
       activeLesonFilter = 'all';
