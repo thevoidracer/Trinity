@@ -1534,6 +1534,8 @@
         };
       }
       if (!userState.connectors) userState.connectors = {};
+      // Image Generator is free & keyless — auto-enable for all users
+      if (!userState.connectors.imggen) userState.connectors.imggen = { connected: true, secret: '' };
       if (!('onboarded' in userState)) userState.onboarded = false;
       if (!('lessonProgress' in userState)) userState.lessonProgress = {};
       persistWorkspaceState();
