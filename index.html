@@ -1867,21 +1867,32 @@
 
     function exportToGoogleApp(type, encodedText) {
       const text = decodeURIComponent(encodedText);
-      const temp = document.createElement('textarea');
-      temp.value = text;
-      document.body.appendChild(temp);
-      temp.select();
-      document.execCommand('copy');
-      document.body.removeChild(temp);
+      // Copy to clipboard using modern API with fallback
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).catch(() => {});
+      } else {
+        const temp = document.createElement('textarea');
+        temp.value = text;
+        document.body.appendChild(temp);
+        temp.select();
+        document.execCommand('copy');
+        document.body.removeChild(temp);
+      }
+
+      // Extract subject line for Gmail if present
+      const subjectMatch = text.match(/Subject:\s*(.+)/i);
+      const gmailSubject = subjectMatch ? encodeURIComponent(subjectMatch[1].trim()) : '';
+      const bodyForGmail = text.replace(/Subject:\s*.+\n?/i, '').replace(/To:\s*.+\n?/i, '').trim();
 
       const urlMap = {
         docs: 'https://docs.google.com/document/create',
         slides: 'https://docs.google.com/presentation/create',
         sheets: 'https://docs.google.com/spreadsheets/create',
-        gmail: `https://mail.google.com/mail/?view=cm&fs=1&body=${encodeURIComponent(text.slice(0, 1800))}`
+        gmail: `https://mail.google.com/mail/?view=cm&fs=1${gmailSubject ? '&su=' + gmailSubject : ''}&body=${encodeURIComponent(bodyForGmail.slice(0, 2000))}`
       };
       window.open(urlMap[type] || urlMap.docs, '_blank', 'noopener,noreferrer');
-      pushNotification(`Copied response and opened new Google ${type.charAt(0).toUpperCase() + type.slice(1)} tab.`);
+      const appName = { docs: 'Docs', slides: 'Slides', sheets: 'Sheets', gmail: 'Gmail' };
+      pushNotification(`✓ Content copied to clipboard. Paste into the Google ${appName[type] || 'app'} tab that just opened.`);
     }
 
     // ---------------------------------------------------------
@@ -2340,7 +2351,20 @@ If they're "new", default to simpler language and shorter answers. If "experienc
       }
 
       if (connectedApps.length) {
-        systemInstructions += `\n\n[CONNECTED APPS & GOOGLE ECOSYSTEM]: ${connectedApps.join(', ')}. Format outputs cleanly for these tools when relevant (e.g., structured outlines for Google Docs, slide-by-slide decks for Google Slides, tables for Google Sheets).`;
+        const connectedIds = CONNECTORS_CATALOG.filter(c => userState.connectors[c.id]?.connected).map(c => c.id);
+        let connectorGuide = `\n\n[CONNECTED APPS]: ${connectedApps.join(', ')}.\n`;
+        connectorGuide += `When the user asks you to use a connected app, produce output tailored for that app:\n`;
+        if (connectedIds.includes('gdocs')) connectorGuide += `- Google Docs: Use clear headings (## H2, ### H3), bullet points, and bold for key terms. Structure as a ready-to-paste document.\n`;
+        if (connectedIds.includes('gslides')) connectorGuide += `- Google Slides: Structure as "Slide 1: [Title]\\n- bullet\\n- bullet\\nSpeaker notes: ..." for each slide. Keep 3-5 bullets per slide max.\n`;
+        if (connectedIds.includes('gsheets')) connectorGuide += `- Google Sheets: Output data as a markdown table with | headers | so the user can copy it. Include formulas where useful (e.g., =SUM, =AVERAGE).\n`;
+        if (connectedIds.includes('gmail')) connectorGuide += `- Gmail: When asked to draft an email, format with Subject:, To:, and Body: sections. Keep professional and concise.\n`;
+        if (connectedIds.includes('gcal')) connectorGuide += `- Google Calendar: When planning schedules, output structured events with Title, Date, Time, Duration, and Description fields.\n`;
+        if (connectedIds.includes('youtube')) connectorGuide += `- YouTube: When asked about videos, provide timestamps, key points, and structured summaries.\n`;
+        if (connectedIds.includes('notion')) connectorGuide += `- Notion: Use toggle headings, callout blocks (> 💡), and database-style tables when relevant.\n`;
+        if (connectedIds.includes('github')) connectorGuide += `- GitHub: Format code with proper language fences, suggest commit messages, and structure issues with title/description/labels.\n`;
+        if (connectedIds.includes('slack')) connectorGuide += `- Slack: Keep messages concise. Use *bold* and bullet points. Suggest thread-worthy follow-ups separately.\n`;
+        connectorGuide += `\nWhen your response is formatted for a Google app, END your response with a line: [EXPORT:docs], [EXPORT:slides], [EXPORT:sheets], or [EXPORT:gmail] so Trinity can show the export button. Only include this tag when the content is specifically formatted for that app.`;
+        systemInstructions += connectorGuide;
       }
       if (activeProject && activeProject.context) {
         systemInstructions += `\n\n[ACTIVE PROJECT: ${activeProject.title}]\n${activeProject.context}`;
@@ -2573,28 +2597,49 @@ If they're "new", default to simpler language and shorter answers. If "experienc
       `;
     }
 
+    function stripExportTags(text) {
+      return text.replace(/\[EXPORT:(docs|slides|sheets|gmail)\]/gi, '').trim();
+    }
+
+    function detectExportType(text) {
+      const m = text.match(/\[EXPORT:(docs|slides|sheets|gmail)\]/i);
+      return m ? m[1].toLowerCase() : null;
+    }
+
     function renderGoogleExportBarHtml(content) {
       const googleIds = ['gdocs', 'gslides', 'gsheets', 'gmail', 'gdrive', 'gcal', 'youtube', 'gmaps', 'gscholar', 'gkeep', 'gforms', 'gclassroom', 'gmeet', 'gemini'];
       const anyGoogleConnected = googleIds.some(id => userState?.connectors?.[id]?.connected);
       if (!anyGoogleConnected) return '';
-      const safePayload = encodeURIComponent(content);
-      return `
-        <div class="pt-2.5 mt-2 border-t border-slate-100 flex flex-wrap items-center gap-1.5">
-          <span class="text-[11px] font-semibold text-slate-400 mr-1">Export to Google:</span>
-          <button onclick="exportToGoogleApp('docs', '${safePayload}')" class="px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 text-[11px] font-semibold cursor-pointer transition">
-            + Google Docs
-          </button>
-          <button onclick="exportToGoogleApp('slides', '${safePayload}')" class="px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 text-[11px] font-semibold cursor-pointer transition">
-            + Google Slides
-          </button>
-          <button onclick="exportToGoogleApp('sheets', '${safePayload}')" class="px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 text-[11px] font-semibold cursor-pointer transition">
-            + Google Sheets
-          </button>
-          <button onclick="exportToGoogleApp('gmail', '${safePayload}')" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 text-[11px] font-semibold cursor-pointer transition">
-            Draft in Gmail
-          </button>
-        </div>
-      `;
+      const cleanContent = stripExportTags(content);
+      const safePayload = encodeURIComponent(cleanContent);
+      const suggested = detectExportType(content);
+      const btnStyles = {
+        docs: { bg: 'bg-blue-600 hover:bg-blue-700 text-white', label: '→ Open in Google Docs' },
+        slides: { bg: 'bg-amber-500 hover:bg-amber-600 text-white', label: '→ Open in Google Slides' },
+        sheets: { bg: 'bg-emerald-600 hover:bg-emerald-700 text-white', label: '→ Open in Google Sheets' },
+        gmail: { bg: 'bg-red-500 hover:bg-red-600 text-white', label: '→ Draft in Gmail' }
+      };
+      let html = '<div class="pt-2.5 mt-2 border-t border-slate-100 flex flex-wrap items-center gap-1.5">';
+      if (suggested && btnStyles[suggested]) {
+        const s = btnStyles[suggested];
+        html += `<button onclick="exportToGoogleApp('${suggested}', '${safePayload}')" class="px-3.5 py-1.5 rounded-lg ${s.bg} text-xs font-semibold cursor-pointer transition shadow-xs">${s.label}</button>`;
+        html += '<span class="text-[11px] text-slate-400 ml-1">or:</span>';
+      } else {
+        html += '<span class="text-[11px] font-semibold text-slate-400 mr-1">Export to:</span>';
+      }
+      const others = ['docs', 'slides', 'sheets', 'gmail'].filter(t => t !== suggested);
+      const smallStyles = {
+        docs: 'bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700',
+        slides: 'bg-amber-50 hover:bg-amber-100 border-amber-200 text-amber-800',
+        sheets: 'bg-emerald-50 hover:bg-emerald-100 border-emerald-200 text-emerald-700',
+        gmail: 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-700'
+      };
+      const labels = { docs: 'Docs', slides: 'Slides', sheets: 'Sheets', gmail: 'Gmail' };
+      others.forEach(t => {
+        html += `<button onclick="exportToGoogleApp('${t}', '${safePayload}')" class="px-2.5 py-1 rounded-lg ${smallStyles[t]} border text-[11px] font-semibold cursor-pointer transition">${labels[t]}</button>`;
+      });
+      html += '</div>';
+      return html;
     }
 
     function appendMessageBubble(role, content, sources = []) {
@@ -2748,7 +2793,7 @@ If they're "new", default to simpler language and shorter answers. If "experienc
     }
 
     function formatMarkdownSafe(text) {
-      let escaped = escapeHtml(text);
+      let escaped = escapeHtml(stripExportTags(text));
       const fence = '`' + '`' + '`';
       const codeBlockRegex = new RegExp(fence + '(\\w*)\\n([\\s\\S]*?)' + fence, 'g');
       escaped = escaped.replace(codeBlockRegex, (_, lang, code) => {
