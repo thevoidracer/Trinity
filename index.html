@@ -1933,7 +1933,8 @@
     function updateAdaptiveIQBadge() {
       const learnedCount = (userState.backgroundMemory || []).length;
       const iqLevel = 1 + Math.floor(learnedCount / 2);
-      document.getElementById('adaptiveLevelCount').textContent = iqLevel;
+      const el = document.getElementById('adaptiveLevelCount');
+      if (el) el.textContent = iqLevel;
       const settingsCount = document.getElementById('settingsLearnedCount');
       if (settingsCount) settingsCount.textContent = learnedCount;
     }
@@ -1941,14 +1942,15 @@
     // ---------------------------------------------------------
     // NOTIFICATION BAR & ACTIVITY DRAWER
     // ---------------------------------------------------------
-    function pushNotification(text) {
+    function pushNotification(text, body, type) {
+      const fullText = body ? `${text} — ${body}` : text;
       const banner = document.getElementById('liveBannerText');
-      if (banner) banner.textContent = text;
+      if (banner) banner.innerHTML = fullText;
 
       if (!userState) return;
       userState.notifications.unshift({
         id: Date.now(),
-        text,
+        text: fullText,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       });
       userState.notifications = userState.notifications.slice(0, 20);
