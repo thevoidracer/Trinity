@@ -252,10 +252,15 @@
       </div>
 
       <div class="flex items-center gap-3 shrink-0">
-        <!-- Intelligence Level Indicator (Silent Background Memory Counter) -->
-        <div class="hidden sm:flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white border border-blue-200 text-blue-700 font-medium" title="Trinity silently learns your preferences after each conversation">
-          <span class="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
-          <span>Adaptive IQ: <strong id="adaptiveLevelCount">1</strong></span>
+        <!-- Credits Badge -->
+        <div id="creditsBadge" onclick="openSettingsModal()" class="hidden sm:flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 font-medium text-xs cursor-pointer" title="Daily AI credits — resets every 24h">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+          <span>70/70 credits</span>
+        </div>
+
+        <!-- Tier Badge -->
+        <div id="tierBadge" class="hidden sm:flex items-center px-2 py-0.5 rounded-full bg-slate-100 border border-slate-200 text-slate-600 font-semibold text-[10px] uppercase tracking-wider">
+          Free
         </div>
 
         <!-- Notification Bell Button -->
@@ -319,17 +324,17 @@
           <button id="navTabChats" onclick="switchSidebarSection('chats')" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg bg-blue-50 text-blue-700 text-xs font-semibold transition cursor-pointer">
             <span class="text-sm">💬</span> Chats
           </button>
-          <button id="navTabLessons" onclick="openLessonsPage(); toggleMobileSidebar(false);" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-slate-600 hover:bg-slate-100 text-xs font-semibold transition cursor-pointer">
-            <span class="text-sm">📚</span> Lessons
+          <button id="navTabLessons" onclick="if(isProFeature('lessons')){showProGate('lessons');return;} openLessonsPage(); toggleMobileSidebar(false);" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-slate-600 hover:bg-slate-100 text-xs font-semibold transition cursor-pointer">
+            <span class="text-sm">📚</span> Lessons <span class="pro-lock-inline ml-auto text-[9px] font-bold text-amber-600 bg-amber-50 border border-amber-200 px-1.5 rounded-full">PRO</span>
           </button>
-          <button id="navTabProjects" onclick="switchSidebarSection('projects')" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-slate-600 hover:bg-slate-100 text-xs font-semibold transition cursor-pointer">
-            <span class="text-sm">📁</span> Projects
+          <button id="navTabProjects" onclick="if(isProFeature('projects')){showProGate('projects');return;} switchSidebarSection('projects')" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-slate-600 hover:bg-slate-100 text-xs font-semibold transition cursor-pointer">
+            <span class="text-sm">📁</span> Projects <span class="pro-lock-inline ml-auto text-[9px] font-bold text-amber-600 bg-amber-50 border border-amber-200 px-1.5 rounded-full">PRO</span>
           </button>
-          <button id="navTabSkills" onclick="switchSidebarSection('skills')" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-slate-600 hover:bg-slate-100 text-xs font-semibold transition cursor-pointer">
-            <span class="text-sm">⚡</span> Skills
+          <button id="navTabSkills" onclick="if(isProFeature('skills')){showProGate('skills');return;} switchSidebarSection('skills')" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-slate-600 hover:bg-slate-100 text-xs font-semibold transition cursor-pointer">
+            <span class="text-sm">⚡</span> Skills <span class="pro-lock-inline ml-auto text-[9px] font-bold text-amber-600 bg-amber-50 border border-amber-200 px-1.5 rounded-full">PRO</span>
           </button>
-          <button id="navTabConnectors" onclick="switchSidebarSection('connectors')" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-slate-600 hover:bg-slate-100 text-xs font-semibold transition cursor-pointer">
-            <span class="text-sm">🔌</span> Apps
+          <button id="navTabConnectors" onclick="if(isProFeature('connectors')){showProGate('connectors');return;} switchSidebarSection('connectors')" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-slate-600 hover:bg-slate-100 text-xs font-semibold transition cursor-pointer">
+            <span class="text-sm">🔌</span> Apps <span class="pro-lock-inline ml-auto text-[9px] font-bold text-amber-600 bg-amber-50 border border-amber-200 px-1.5 rounded-full">PRO</span>
           </button>
 
           <div class="border-t border-slate-200 my-2"></div>
@@ -337,11 +342,11 @@
           <button onclick="openPromptCritic(); toggleMobileSidebar(false);" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-slate-600 hover:bg-slate-100 text-xs font-semibold transition cursor-pointer">
             <span class="text-sm">🔍</span> Prompt Critic
           </button>
-          <button onclick="openPromptBuilder(); toggleMobileSidebar(false);" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-slate-600 hover:bg-slate-100 text-xs font-semibold transition cursor-pointer">
-            <span class="text-sm">🛠️</span> Prompt Builder
+          <button onclick="if(isProFeature('prompt_builder')){showProGate('prompt_builder');return;} openPromptBuilder(); toggleMobileSidebar(false);" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-slate-600 hover:bg-slate-100 text-xs font-semibold transition cursor-pointer">
+            <span class="text-sm">🛠️</span> Prompt Builder <span class="pro-lock-inline ml-auto text-[9px] font-bold text-amber-600 bg-amber-50 border border-amber-200 px-1.5 rounded-full">PRO</span>
           </button>
-          <button onclick="toggleCoachMode(true); quickPrompt(''); toggleMobileSidebar(false);" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-slate-600 hover:bg-slate-100 text-xs font-semibold transition cursor-pointer">
-            <span class="text-sm">🎓</span> Coach Mode
+          <button onclick="if(isProFeature('coach')){showProGate('coach');return;} toggleCoachMode(true); quickPrompt(''); toggleMobileSidebar(false);" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-slate-600 hover:bg-slate-100 text-xs font-semibold transition cursor-pointer">
+            <span class="text-sm">🎓</span> Coach Mode <span class="pro-lock-inline ml-auto text-[9px] font-bold text-amber-600 bg-amber-50 border border-amber-200 px-1.5 rounded-full">PRO</span>
           </button>
         </div>
 
@@ -563,6 +568,7 @@
                 </div>
 
                 <div class="flex items-center gap-2">
+                  <span id="creditsBadgeMobile" class="text-[10px] font-semibold text-slate-400 sm:hidden">70 credits</span>
                   <button id="stopStreamBtn" onclick="stopStreaming()" class="hidden px-3 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 text-xs font-semibold transition cursor-pointer">
                     Stop
                   </button>
@@ -706,6 +712,36 @@
             class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-blue-600" />
           <p class="text-[11px] text-slate-400 mt-1">From Google Cloud Console → APIs → Credentials → OAuth Client ID. When set, Trinity creates docs directly in your Drive.</p>
         </div>
+        <!-- Plan & Credits -->
+        <div class="p-3.5 rounded-xl border border-indigo-200 bg-indigo-50/50 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <span class="font-semibold text-xs text-slate-900">Plan & Credits</span>
+            <span id="settingsTierPill" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-200 text-slate-600 uppercase tracking-wider">Free</span>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="setTier('free')" id="tierBtnFree" class="flex-1 p-2.5 rounded-lg border-2 border-slate-300 bg-white text-center cursor-pointer hover:border-blue-400 transition">
+              <div class="text-xs font-bold text-slate-800">Free</div>
+              <div class="text-[10px] text-slate-500 mt-0.5">70 credits/day</div>
+              <div class="text-[10px] text-slate-400 mt-0.5">AI Chat only</div>
+            </button>
+            <button onclick="setTier('pro')" id="tierBtnPro" class="flex-1 p-2.5 rounded-lg border-2 border-slate-300 bg-white text-center cursor-pointer hover:border-blue-400 transition">
+              <div class="text-xs font-bold text-blue-700">Pro</div>
+              <div class="text-[10px] text-blue-600 mt-0.5">200 credits/day</div>
+              <div class="text-[10px] text-slate-400 mt-0.5">Everything unlocked</div>
+            </button>
+          </div>
+          <div id="creditsMeter" class="space-y-1">
+            <div class="flex justify-between text-[11px]">
+              <span class="text-slate-600">Today's credits</span>
+              <span id="settingsCreditsLabel" class="font-semibold text-slate-800">70/70</span>
+            </div>
+            <div class="w-full h-1.5 rounded-full bg-slate-200 overflow-hidden">
+              <div id="settingsCreditBar" class="h-full rounded-full bg-emerald-500 transition-all" style="width:100%"></div>
+            </div>
+            <p class="text-[10px] text-slate-400">Credits reset daily at midnight. Better models cost more credits per message.</p>
+          </div>
+        </div>
+
         <div class="p-3 rounded-xl bg-blue-50 border border-blue-100 text-xs text-blue-800">
           <strong>Silent Background Learning:</strong> Trinity has learned <span id="settingsLearnedCount">0</span> contextual facts from your conversations to tailor future answers.
         </div>
@@ -1102,6 +1138,166 @@
     let advancedModeOpen = false;
     let surveyAnswers = { experience: null, tools: [], goals: [], learningStyle: null };
     let activeLessonId = null;
+
+    // ---------------------------------------------------------
+    // CREDIT & TIER SYSTEM
+    // ---------------------------------------------------------
+    const CREDIT_COSTS = {
+      // OpenRouter models
+      'anthropic/claude-opus-4': 10,
+      'anthropic/claude-sonnet-4': 5,
+      'openai/gpt-4o': 5,
+      'openai/o3-mini': 5,
+      'google/gemini-2.5-pro': 3,
+      'deepseek/deepseek-chat': 1,
+      'meta-llama/llama-3.3-70b-instruct:free': 0,
+      'mistralai/mistral-small-3.1-24b-instruct:free': 0,
+      'qwen/qwen3-14b:free': 0,
+      // OpenAI direct
+      'gpt-4o': 5, 'gpt-4o-mini': 2, 'o3-mini': 5,
+      // Anthropic direct
+      'claude-sonnet-4-20250514': 5, 'claude-opus-4-20250514': 10, 'claude-haiku-3-5-20241022': 2,
+      // Gemini direct
+      'gemini-2.5-flash': 1, 'gemini-2.5-pro': 3,
+      // Groq (all free)
+      'llama-3.3-70b-versatile': 0, 'deepseek-r1-distill-llama-70b': 0,
+      'qwen-qwq-32b': 0, 'mistral-saba-24b': 0,
+      'llama-3.1-8b-instant': 0, 'gemma2-9b-it': 0
+    };
+
+    const TIER_CONFIG = {
+      free:  { label: 'Free',  credits: 70,  color: 'slate',  features: ['ai_chat'] },
+      pro:   { label: 'Pro',   credits: 200, color: 'blue',   features: ['ai_chat','lessons','skills','projects','connectors','coach','prompt_builder'] }
+    };
+
+    // Ordered fallback chain: try best → cheapest → free
+    const MODEL_FALLBACK_CHAIN = [
+      { id: 'anthropic/claude-opus-4', name: 'Claude Opus 4', cost: 10, provider: 'openrouter' },
+      { id: 'anthropic/claude-sonnet-4', name: 'Claude Sonnet 4', cost: 5, provider: 'openrouter' },
+      { id: 'openai/gpt-4o', name: 'GPT-4o', cost: 5, provider: 'openrouter' },
+      { id: 'google/gemini-2.5-pro', name: 'Gemini 2.5 Pro', cost: 3, provider: 'openrouter' },
+      { id: 'deepseek/deepseek-chat', name: 'DeepSeek V3', cost: 1, provider: 'openrouter' },
+      { id: 'gemini-2.5-flash', name: 'Gemini Flash (free)', cost: 1, provider: 'gemini' },
+      { id: 'llama-3.3-70b-versatile', name: 'Llama 70B (free)', cost: 0, provider: 'groq' },
+      { id: 'meta-llama/llama-3.3-70b-instruct:free', name: 'Llama 70B (free)', cost: 0, provider: 'openrouter' }
+    ];
+
+    function getCreditState() {
+      const today = new Date().toISOString().slice(0, 10);
+      let cs = JSON.parse(localStorage.getItem('trinity_credits') || 'null');
+      const tier = userState?.tier || 'free';
+      const dailyMax = TIER_CONFIG[tier].credits;
+      if (!cs || cs.date !== today) {
+        cs = { date: today, used: 0, tier };
+        localStorage.setItem('trinity_credits', JSON.stringify(cs));
+      }
+      // If tier changed mid-day, update max but keep used
+      if (cs.tier !== tier) {
+        cs.tier = tier;
+        localStorage.setItem('trinity_credits', JSON.stringify(cs));
+      }
+      return { ...cs, remaining: Math.max(0, dailyMax - cs.used), dailyMax };
+    }
+
+    function deductCredits(amount) {
+      const cs = getCreditState();
+      cs.used += amount;
+      localStorage.setItem('trinity_credits', JSON.stringify({ date: cs.date, used: cs.used, tier: cs.tier }));
+      updateCreditsDisplay();
+      return cs;
+    }
+
+    function getModelCost(modelId) {
+      return CREDIT_COSTS[modelId] ?? 2; // default 2 for unknown models
+    }
+
+    function getBestAffordableModel(currentModel, provider, remaining) {
+      const currentCost = getModelCost(currentModel);
+      if (currentCost <= remaining) return null; // current model is fine
+
+      // Find the best model user can still afford
+      for (const fb of MODEL_FALLBACK_CHAIN) {
+        if (fb.cost <= remaining) {
+          return fb;
+        }
+      }
+      return null; // totally out of credits
+    }
+
+    function updateCreditsDisplay() {
+      const cs = getCreditState();
+      const el = document.getElementById('creditsBadge');
+      if (!el) return;
+      const pct = cs.dailyMax > 0 ? (cs.remaining / cs.dailyMax) * 100 : 0;
+      let color = 'text-emerald-700 bg-emerald-50 border-emerald-200';
+      if (pct < 25) color = 'text-red-700 bg-red-50 border-red-200';
+      else if (pct < 50) color = 'text-amber-700 bg-amber-50 border-amber-200';
+      el.className = `hidden sm:flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border font-medium text-xs cursor-pointer ${color}`;
+      el.innerHTML = `<span class="w-1.5 h-1.5 rounded-full ${pct < 25 ? 'bg-red-500' : pct < 50 ? 'bg-amber-500' : 'bg-emerald-500'}"></span>` +
+        `<span>${cs.remaining}/${cs.dailyMax} credits</span>`;
+      // Also update mobile-visible version
+      const elM = document.getElementById('creditsBadgeMobile');
+      if (elM) elM.textContent = `${cs.remaining} credits`;
+    }
+
+    function isProFeature(feature) {
+      const tier = userState?.tier || 'free';
+      return !TIER_CONFIG[tier].features.includes(feature);
+    }
+
+    function showProGate(featureName) {
+      const names = { lessons: 'Lessons', skills: 'Skills', projects: 'Projects', connectors: 'Connectors', coach: 'Coach Mode', prompt_builder: 'Prompt Builder' };
+      const label = names[featureName] || featureName;
+      pushNotification(`🔒 ${label} requires a Pro plan. Upgrade in Settings to unlock everything.`);
+    }
+
+    function setTier(tier) {
+      userState.tier = tier;
+      persistWorkspaceState();
+      updateCreditsDisplay();
+      updateTierUI();
+      updateProLockTags();
+      pushNotification(tier === 'pro' ? '⭐ Upgraded to Pro — all features unlocked!' : 'Switched to Free plan.');
+    }
+
+    function updateProLockTags() {
+      const isPro = (userState?.tier || 'free') === 'pro';
+      document.querySelectorAll('.pro-lock-inline').forEach(el => {
+        el.style.display = isPro ? 'none' : '';
+      });
+    }
+
+    function updateTierUI() {
+      const tier = userState?.tier || 'free';
+      const cfg = TIER_CONFIG[tier];
+      // Settings tier buttons
+      const freeBtn = document.getElementById('tierBtnFree');
+      const proBtn = document.getElementById('tierBtnPro');
+      if (freeBtn) freeBtn.className = `flex-1 p-2.5 rounded-lg border-2 ${tier === 'free' ? 'border-blue-500 bg-blue-50' : 'border-slate-300 bg-white'} text-center cursor-pointer hover:border-blue-400 transition`;
+      if (proBtn) proBtn.className = `flex-1 p-2.5 rounded-lg border-2 ${tier === 'pro' ? 'border-blue-500 bg-blue-50' : 'border-slate-300 bg-white'} text-center cursor-pointer hover:border-blue-400 transition`;
+      // Settings pill
+      const pill = document.getElementById('settingsTierPill');
+      if (pill) {
+        pill.textContent = cfg.label;
+        pill.className = `text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${tier === 'pro' ? 'bg-blue-100 text-blue-700' : 'bg-slate-200 text-slate-600'}`;
+      }
+      // Header tier badge
+      const badge = document.getElementById('tierBadge');
+      if (badge) {
+        badge.textContent = cfg.label;
+        badge.className = `hidden sm:flex items-center px-2 py-0.5 rounded-full font-semibold text-[10px] uppercase tracking-wider ${tier === 'pro' ? 'bg-blue-100 border border-blue-200 text-blue-700' : 'bg-slate-100 border border-slate-200 text-slate-600'}`;
+      }
+      // Credits meter in settings
+      const cs = getCreditState();
+      const pct = cs.dailyMax > 0 ? (cs.remaining / cs.dailyMax) * 100 : 0;
+      const lbl = document.getElementById('settingsCreditsLabel');
+      if (lbl) lbl.textContent = `${cs.remaining}/${cs.dailyMax}`;
+      const bar = document.getElementById('settingsCreditBar');
+      if (bar) {
+        bar.style.width = pct + '%';
+        bar.className = `h-full rounded-full transition-all ${pct < 25 ? 'bg-red-500' : pct < 50 ? 'bg-amber-500' : 'bg-emerald-500'}`;
+      }
+    }
 
     // ---------------------------------------------------------
     // LESSON LIBRARY — 15 pre-written lessons
@@ -1538,7 +1734,8 @@
           profile: null,
           beginnerMode: true,
           coachMode: false,
-          lessonProgress: {}
+          lessonProgress: {},
+          tier: 'free'
         };
       }
       if (!userState.connectors) userState.connectors = {};
@@ -1546,7 +1743,10 @@
       if (!userState.connectors.imggen) userState.connectors.imggen = { connected: true, secret: '' };
       if (!('onboarded' in userState)) userState.onboarded = false;
       if (!('lessonProgress' in userState)) userState.lessonProgress = {};
+      if (!('tier' in userState)) userState.tier = 'free';
       persistWorkspaceState();
+      // Init credits display and pro lock tags after state is ready
+      setTimeout(() => { updateCreditsDisplay(); updateTierUI(); updateProLockTags(); }, 100);
     }
 
     function persistWorkspaceState() {
@@ -2235,6 +2435,8 @@
       updateAdaptiveIQBadge();
       updateSupaStatusPill();
       updateModelSelector();
+      updateTierUI();
+      updateCreditsDisplay();
       document.getElementById('settingsModal').classList.remove('hidden');
     }
 
@@ -2818,9 +3020,47 @@ Rules for image generation:
         systemInstructions += `\n\n${webContextBlock}`;
       }
 
+      // ── Credit check & auto-fallback ──
+      const creditState = getCreditState();
+      const currentModel = userState.premiumModel || '';
+      const modelCost = getModelCost(currentModel);
+      let usedFallback = null;
+
+      if (modelCost > 0 && creditState.remaining < modelCost) {
+        // Not enough credits for selected model — find a cheaper one
+        const fallback = getBestAffordableModel(currentModel, userState.premiumProvider, creditState.remaining);
+        if (fallback) {
+          usedFallback = fallback;
+          // Temporarily override model for this request
+          userState._originalModel = userState.premiumModel;
+          userState._originalProvider = userState.premiumProvider;
+          userState.premiumModel = fallback.id;
+          userState.premiumProvider = fallback.provider;
+          pushNotification(`⚡ Not enough credits for current model (${modelCost} needed, ${creditState.remaining} left). Auto-switched to ${fallback.name} (${fallback.cost} credits).`);
+        } else if (creditState.remaining <= 0) {
+          removeResearchBubble(researchId);
+          appendMessageBubble('assistant', '🔒 You\'ve used all your credits for today. Credits reset at midnight, or upgrade to Pro for 200 credits/day. Free models (Groq, Llama) cost 0 credits — switch to one in Settings to keep chatting!');
+          chat.messages.push({ role: 'assistant', content: 'Credits exhausted for today. Suggested switching to a free model or upgrading.' });
+          persistWorkspaceState();
+          return;
+        }
+      }
+
       updateResearchStatus(researchId, 'Synthesizing verified response...', 'Streaming output...');
       const reply = await fetchTrinityAIResponse(systemInstructions, chat.messages);
       removeResearchBubble(researchId);
+
+      // Deduct credits after successful response
+      const finalCost = getModelCost(userState.premiumModel || '');
+      if (finalCost > 0) deductCredits(finalCost);
+
+      // Restore original model if we used a fallback
+      if (usedFallback && userState._originalModel) {
+        userState.premiumModel = userState._originalModel;
+        userState.premiumProvider = userState._originalProvider;
+        delete userState._originalModel;
+        delete userState._originalProvider;
+      }
 
       // Show Stop button while streaming text
       const stopBtn = document.getElementById('stopStreamBtn');
